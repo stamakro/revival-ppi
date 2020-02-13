@@ -1,3 +1,4 @@
+import pickle
 import sys
 '''
 STEPS
@@ -253,6 +254,112 @@ def makeNetworkArabidopsis():
 
 
 					fw.write(p1 + '\t' + p2 + '\n')
+
+
+def makeNetworkTomato():
+
+	with open('../data/tomato/annotations/P_geneNames.pkl', 'rb') as f:
+		geneNames = pickle.load(f)
+
+	path = '../data/tomato/interactions/'
+
+	etg2solyc = dict()
+	solyc2etg = dict()
+
+	with open(path + 'tomato.entrez_2_string.2018.tsv') as f:
+		for line in f:
+			if line[0] == '#':
+				continue
+
+			fields = line.split()
+
+			assert fields[0] == '4081'
+
+			etg = fields[1]
+			sol = fields[2].split('.')[1]
+
+			#print etg, sol
+
+			etg = 'ETG' + etg
+
+			if etg in etg2solyc:
+				if etg2solyc[etg] in geneNames and sol in geneNames:
+					print ('fuck')
+
+				if etg2solyc[etg] in geneNames and sol not in geneNames:
+					print(etg, sol)
+					continue
+
+			etg2solyc[etg] = sol
+			assert sol not in solyc2etg
+			solyc2etg[sol] = etg
+
+
+	etg2solyc['ETG544038'] = 'Solyc06g074350'
+	etg2solyc['ETG100736524'] = 'Solyc08g048390'
+	etg2solyc['ETG100736519'] = 'Solyc11g020670'
+	etg2solyc['ETG100736515'] = 'Solyc02g077250'
+	etg2solyc['ETG100736461'] = 'Solyc04006980'
+	etg2solyc['ETG100736455'] = 'Solyc06g069240'
+	etg2solyc['ETG100736456'] = 'Solyc07g053410'
+	etg2solyc['ETG100736247'] = 'Solyc01g103780'
+	etg2solyc['ETG543565'] = 'Solyc04g012120'
+	partners = dict()
+
+
+	with open(path + 'ppi-clean', 'w') as fw:
+		with open(path + 'ppi-biogrid-physical.txt') as fr:
+			for i, line in enumerate(fr):
+
+				fields = line.split('\t')
+
+				p1 = fields[0]
+				p2 = fields[1]
+
+				if p1 == p2:
+					#homodimer etc.
+
+					continue
+
+				if p1 not in etg2solyc and p1.split('.')[0] != 'Solyc01g094320':
+
+					continue
+
+				if p2 not in etg2solyc and p2.split('.')[0] != 'Solyc01g094320':
+
+					continue
+
+				if p1 in etg2solyc:
+					p1 = etg2solyc[p1]
+				else:
+					p1 = p1.split('.')[0]
+
+				if p2 in etg2solyc:
+					p2 = etg2solyc[p2]
+				else:
+					p2 = p2.split('.')[0]
+
+				assert p1 != p2
+
+				if p1 in partners and p2 in partners[p1]:
+					#duplicate line
+					continue
+
+				if p2 in partners and p1 in partners[p2]:
+					#we've seen the reverse order pair
+					continue
+
+				if p1 not in partners:
+					partners[p1] = set(p2)
+				else:
+					partners[p1].add(p2)
+
+
+				fw.write(p1 + '\t' + p2 + '\n')
+
+
+
+
 
 
 species = sys.argv[1]
