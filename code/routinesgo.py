@@ -846,25 +846,32 @@ def normalizedMisInformation(Ytrue, Ypred, termIC, avg=False):
     return nmi
 
 
-def normalizedSemanticDistance(Ytrue, Ypred, termIC, avg=False):
-    ru = normalizedRemainingUncertainty(Ytrue, Ypred, termIC, False)
-    mi = normalizedMisInformation(Ytrue, Ypred, termIC, False)
+def normalizedSemanticDistance(Ytrue, Ypred, termIC, avg=True):
+    ru = normalizedRemainingUncertainty(Ytrue, Ypred, termIC, avg)
+    mi = normalizedMisInformation(Ytrue, Ypred, termIC, avg)
     sd = np.sqrt(ru ** 2 + mi ** 2)
 
-    if avg:
-        ru = np.mean(ru)
-        mi = np.mean(mi)
-        sd = np.mean(sd)
+    #if avg:
+    #    ru = np.mean(ru)
+    #    mi = np.mean(mi)
+    #    sd = np.mean(sd)
 
     return [ru, mi, sd]
 
 
 def remainingUncertainty(Ytrue, Ypred, termIC, avg=False):
+    ru = np.logical_and(Ytrue == 1, Ypred == 0).astype(float).dot(termIC)
+    if avg:
+        ru = np.mean(ru)
+
+    return ru
+    '''
     nrProteins, nrTerms = Ytrue.shape
+    
     ru = np.zeros((nrProteins,), float)
     for i in range(nrProteins):
-        pr = Ypred[i, :]
-        gt = Ytrue[i, :]
+        pr = Ypred[i]
+        gt = Ytrue[i]
         fn = np.intersect1d(np.where(gt == 1), np.where(pr == 0))
         for fni in fn:
             ru[i] += termIC[fni]
@@ -872,26 +879,28 @@ def remainingUncertainty(Ytrue, Ypred, termIC, avg=False):
     if avg:
         ru = np.mean(ru)
     return ru
-
+    '''
 
 def misInformation(Ytrue, Ypred, termIC, avg=False):
+    mi = np.logical_and(Ytrue == 0, Ypred == 1).astype(float).dot(termIC)
+    '''
     nrProteins, nrTerms = Ytrue.shape
     mi = np.zeros((nrProteins,), float)
     for i in range(nrProteins):
-        pr = Ypred[i, :]
-        gt = Ytrue[i, :]
+        pr = Ypred[i]
+        gt = Ytrue[i]
         fp = np.intersect1d(np.where(gt == 0), np.where(pr == 1))
         for fpi in fp:
             mi[i] += termIC[fpi]
-
+    '''
     if avg:
         mi = np.mean(mi)
     return mi
 
 
 def semanticDistance(Ytrue, Ypred, termIC):
-    ru = remainingUncertainty(Ytrue, Ypred, termIC, False)
-    mi = misInformation(Ytrue, Ypred, termIC, False)
+    ru = remainingUncertainty(Ytrue, Ypred, termIC, True)
+    mi = misInformation(Ytrue, Ypred, termIC, True)
     sd = np.sqrt(ru ** 2 + mi ** 2)
     return [ru, mi, sd]
 

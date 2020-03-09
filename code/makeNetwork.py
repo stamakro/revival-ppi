@@ -11,12 +11,148 @@ STEPS
 '''
 
 
-def makeNetworkYeast():
+def makeNetworkWorm(annotationPrefix):
+	path = '../data/celegans/interactions/'
+
+	with open('../data/celegans/annotations/' + annotationPrefix +'geneNames.pkl', 'rb') as f:
+		geneNames = pickle.load(f)
+	annotatedGenes = set(geneNames)
+
+
+	uni2tair = dict()
+	with open('../data/celegans/sequences/sequences.tab') as f:
+		for line in f:
+			fields= line[:-2].split('\t')
+			#assert fields[2] == 'reviewed'
+
+			uni = fields[0]
+			for p in proteins:
+				for gg in fields[1:]:
+					if p == gg:
+						if uni in uni2tair:
+							uni2tair[uni].add(p)
+						else:
+							uni2tair[uni] = {p}
+					elif p2g[p] == gg:
+						if uni in uni2tair:
+							uni2tair[uni].add(p2g[p])
+						else:
+							uni2tair[uni] = {p2g[p]}
+
+	tair2uni = dict()
+	for u in uni2tair:
+		for tt in uni2tair[u]:
+			if tt in tair2uni and tair2uni[tt] != u:
+				print(tt, u)
+			else:
+				tair2uni[tt] = u
+
+
+
+	tobedelUni = set()
+	tobedelTair = set()
+
+	for k in tair2uni:
+		if len(tair2uni[k]) > 1:
+			tobedelTair.add(k)
+			for uu in tair2uni[k]:
+				tobedelUni.add(uu)
+
+	for i in tobedelTair:
+		del tair2uni[i]
+
+	for i in tobedelUni:
+		del uni2tair[i]
+
+	tobedelUni = set()
+	tobedelTair = set()
+
+	for k in uni2tair:
+		if len(uni2tair[k]) > 1:
+			tobedelUni.add(k)
+			for uu in uni2tair[k]:
+				tobedelTair.add(uu)
+
+	for i in tobedelTair:
+		del tair2uni[i]
+
+	for i in tobedelUni:
+		del uni2tair[i]
+
+	for k in tair2uni:
+		assert len(tair2uni[k]) == 1
+		assert tair2uni[k][0] in uni2tair
+
+	for k in uni2tair:
+		assert len(uni2tair[k]) == 1
+		assert uni2tair[k][0] in tair2uni
+
+
+	for k in tair2uni:
+		tair2uni[k] = tair2uni[k][0]
+
+
+	for k in uni2tair:
+		uni2tair[k] = uni2tair[k][0]
+
+	partners = dict()
+	with open(path + 'ppi-clean', 'w') as fw:
+		with open(path + 'ppi-biogrid-physical.txt') as fr:
+			for i, line in enumerate(fr):
+
+				fields = line.split('\t')
+				p1 = fields[0]
+				p2 = fields[1]
+
+
+
+				if p1 == p2:
+					#homodimer etc.
+					continue
+
+
+				if p1 not in tair2uni or p2 not in tair2uni:
+					continue
+
+				p1 = tair2uni[p1]
+				p2 = tair2uni[p2]
+
+
+				if p1 not in annotatedGenes or p2 not in annotatedGenes:
+					continue
+
+				if p1 in partners and p2 in partners[p1]:
+					#duplicate line
+					#print('duplicate line')
+					continue
+
+				if p2 in partners and p1 in partners[p2]:
+					#print('reverse')
+					#we've seen the reverse order pair
+					continue
+
+				if p1 not in partners:
+					partners[p1] = set([p2])
+				else:
+					partners[p1].add(p2)
+
+
+				fw.write(p1 + '\t' + p2 + '\n')
+
+
+
+
+def makeNetworkYeast(annotationPrefix):
 	path = '../data/yeast/interactions/'
 
 	tair2uni = dict()
 	uni2tair = dict()
 
+
+	with open('../data/yeast/annotations/' + annotationPrefix + 'geneNames.pkl', 'rb') as f:
+		geneNames = pickle.load(f)
+
+	annotatedGenes = set(geneNames)
 
 	with open(path + 'gene2uniprot.tab') as f:
 		for i, line in enumerate(f):
@@ -113,6 +249,9 @@ def makeNetworkYeast():
 				p1 = tair2uni[p1]
 				p2 = tair2uni[p2]
 
+				if p1 not in annotatedGenes or p2 not in annotatedGenes:
+					continue
+
 				if p1 in partners and p2 in partners[p1]:
 					#duplicate line
 					#print('duplicate line')
@@ -133,8 +272,13 @@ def makeNetworkYeast():
 
 
 
-def makeNetworkArabidopsis():
+def makeNetworkArabidopsis(annotationPrefix):
 	path = '../data/arabidopsis/interactions/'
+
+	with open('../data/arabidopsis/annotations/' + annotationPrefix + 'geneNames.pkl', 'rb') as f:
+		geneNames = pickle.load(f)
+
+	annotatedGenes = set(geneNames)
 
 	tair2uni = dict()
 	uni2tair = dict()
@@ -234,8 +378,12 @@ def makeNetworkArabidopsis():
 					if p1 not in tair2uni or p2 not in tair2uni:
 						continue
 
+
 					p1 = tair2uni[p1]
 					p2 = tair2uni[p2]
+
+					if p1 not in annotatedGenes or p2 not in annotatedGenes:
+						continue
 
 					if p1 in partners and p2 in partners[p1]:
 						#duplicate line
@@ -256,10 +404,12 @@ def makeNetworkArabidopsis():
 					fw.write(p1 + '\t' + p2 + '\n')
 
 
-def makeNetworkTomato():
+def makeNetworkTomato(annotationPrefix):
 
-	with open('../data/tomato/annotations/P_geneNames.pkl', 'rb') as f:
+	with open('../data/tomato/annotations/' + annotationPrefix + 'geneNames.pkl', 'rb') as f:
 		geneNames = pickle.load(f)
+
+	annotatedGenes = set(geneNames)
 
 	path = '../data/tomato/interactions/'
 
@@ -339,7 +489,9 @@ def makeNetworkTomato():
 				else:
 					p2 = p2.split('.')[0]
 
-				assert p1 != p2
+
+				if p1 not in annotatedGenes or p2 not in annotatedGenes:
+					continue
 
 				if p1 in partners and p2 in partners[p1]:
 					#duplicate line
@@ -363,9 +515,17 @@ def makeNetworkTomato():
 
 
 species = sys.argv[1]
+
+try:
+	annotationPrefix = sys.argv[2]
+except IndexError:
+	annotationPrefix = 'P_'
+
 if species == 'yeast':
-	makeNetworkYeast()
+	makeNetworkYeast(annotationPrefix)
 elif species == 'arabidopsis':
-	makeNetworkArabidopsis()
+	makeNetworkArabidopsis(annotationPrefix)
 elif species == 'tomato':
-	makeNetworkTomato()
+	makeNetworkTomato(annotationPrefix)
+elif species == 'celegans':
+	makeNetworkWorm(annotationPrefix)

@@ -3,32 +3,48 @@ from sklearn.metrics import precision_recall_fscore_support, average_precision_s
 import pickle
 from scipy.stats import rankdata, spearmanr, pearsonr
 from scipy.linalg import expm
-import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
 import sys
 from copy import deepcopy
-from routinesgo import normalizedSemanticDistance
+from routinesgo import normalizedSemanticDistance, semanticDistance
+from scipy.sparse import load_npz
 
-def predict(Atest, Ytrain, Ytest, ic, thresholds = None):
+def predict(method='gba', **kwargs):
+	if method == 'gba':
+		return gbaPredict(kwargs['atest'], kwargs['ytrain'])
+
+	if method == 'node2vec':
+		return None
+
+
+
+
+def evaluate(Ytest, Y_posteriors, ic, thresholds=None):
 
 	if thresholds is None:
-		thresholds = np.linspace(0.0, 1.0, 21)
+ 		thresholds = np.linspace(0.0, 1.0, 51)
 
-	Y_posteriors = gbaPredict(Atest, Ytrain)
-
-	pc_auprc = average_precision_score(Ytest.T, Y_posteriors.T, average=None)
 
 	pc_f1 = np.zeros((thresholds.shape[0], Ytest.shape[0]))
-	pc_nsd = np.zeros((thresholds.shape[0], Ytest.shape[0]))
+	pc_nsd = np.ones((thresholds.shape[0],)) * np.sum(ic) * 2.
+	pc_sd = np.ones((thresholds.shape[0], )) * np.sum(ic) * 2.
+
+	m = np.max(Y_posteriors)
 
 	for i, thres in enumerate(thresholds):
-		Ypred = (Y_posteriors >= thres).astype(int)
+		if thres > m:
+			break
+		#print('%d / %d' % (i, thresholds.shape[0]))
+		Ypred = (Y_posteriors >= np.round(thres,2 )).astype(int)
 
-		pc_nsd[i] = normalizedSemanticDistance(Ytest, Ypred, ic)[2]
-		pc_f1[i] = f1_score(Ytest.T, Ypred.T, average=None)
+		#pc_nsd[i] = normalizedSemanticDistance(Ytest, Ypred, ic, True)[2]
+		pc_sd[i] = semanticDistance(Ytest, Ypred, ic)[2]
+		pc_f1[i] = f1_score(Ytest, Ypred, average='samples')
+	#pc_auc = average_precision_score(Ytest, Y_posteriors, average='samples')
 
+	return np.max(pc_f1), np.min(pc_sd), np.min(pc_nsd)
+	#return pc_auc, np.min(pc_sd), np.min(pc_nsd)
 
-	return pc_auprc, pc_f1[np.argmax(np.mean(pc_f1, 1))], pc_nsd[np.argmin(np.mean(pc_nsd, 1))]
 
 
 def predictBayes(Atest, Ytrain, Ytest, ic, thresholds = None):
@@ -115,11 +131,8 @@ def matchNetworkAndLabels(A, ppiGene2row, ppiRow2gene, geneNames):
 
 	#if we have interactions, but not functions --> remove from ppi adjacency matrix
 	tobedel = np.sort([ppiGene2row[g] for g in ppiGene2row if g not in geneNames])
+	assert len(tobedel) == 0
 	geneOrderPPI = np.array([ppiRow2gene[i] for i in range(len(ppiRow2gene))])
-
-	A = np.delete(A, tobedel, axis=0)
-	A = np.delete(A, tobedel, axis=1)
-	geneOrderPPI = np.delete(geneOrderPPI, tobedel)
 
 	ppiGene2row = dict()
 	ppiRow2gene = dict()
@@ -157,15 +170,16 @@ def matchNetworkAndLabels(A, ppiGene2row, ppiRow2gene, geneNames):
 	return A, ppiGene2row, ppiRow2gene
 
 
-def goLoader(species):
+def goLoader(species, prefix='P_'):
 
-	with open('../data/' + species + '/annotations/Y.pkl') as f:
-		Y = pickle.load(f).toarray()
+	Y = load_npz('../data/' + species + '/annotations/' + prefix + 'Y.npz').toarray()
+	#with open('../data/' + species + '/annotations/' + prefix + 'Y.pkl') as f:
+	#	Y = pickle.load(f).toarray()
 
-	with open('../data/' + species + '/annotations/geneNames.pkl') as f:
+	with open('../data/' + species + '/annotations/' + prefix + 'geneNames.pkl', 'rb') as f:
 		geneNames = pickle.load(f)
 
-	with open('../data/' + species + '/annotations/termNames.pkl') as f:
+	with open('../data/' + species + '/annotations/' + prefix + 'termNames.pkl', 'rb') as f:
 		termNames = pickle.load(f)
 
 	gene2row = dict()
@@ -184,11 +198,7 @@ def getPPInetwork(species, datasource):
 
 	if datasource == 'biogrid':
 
-		with open('../data/' + species + '/interactions/biogrid-final/A.pkl') as f:
-			A = pickle.load(f).toarray()
-
-		with open('../data/' + species + '/interactions/biogrid-final/row2protein.pkl') as f:
-			ppiRow2gene = pickle.load(f)
+		A = load_npz('../data/' + species + '/interactions/final/biogrid/A.npz').toarray()
 
 
 	elif datasource == 'dl':
@@ -196,27 +206,20 @@ def getPPInetwork(species, datasource):
 		with open('../data/' + species + '/interactions/dl/A.pkl') as f:
 			A = pickle.load(f).toarray()
 
-		A += A.T
+		#A += A.T
+		assert (A == A.T).all()
 
 		A = (A >= 0.5).astype(float)
 
 		return [A, None, None]
 
 	else:
-		with open('../data/' + species + '/interactions/string-final/' + datasource + '.pkl') as f:
-			A = pickle.load(f).toarray()
+		A = load_npz('../data/' + species + '/interactions/final/string/A_' + datasource + '.npz').toarray()
 
-		with open('../data/' + species + '/interactions/biogrid-final/row2protein.pkl') as f:
-			ppiRow2gene = pickle.load(f)
+	#A += A.T
+	assert (A == A.T).all()
 
-	A += A.T
-
-	ppiGene2row = dict()
-	for k in ppiRow2gene:
-		ppiGene2row[ppiRow2gene[k]] = k
-
-
-	return [A, ppiGene2row, ppiRow2gene]
+	return A
 
 
 def getMultiplePPInetworks(species, datasources):
@@ -252,7 +255,7 @@ def getMultiplePPInetworks(species, datasources):
 
 	Atotal = integrateStringScores(A)
 
-	with open('../data/' + species + '/interactions/biogrid-final/row2protein.pkl') as f:
+	with open('../data/' + species + '/interactions/biogrid-final/row2protein.pkl', 'rb') as f:
 		ppiRow2gene = pickle.load(f)
 
 	ppiGene2row = dict()
