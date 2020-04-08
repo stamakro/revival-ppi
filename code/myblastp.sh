@@ -8,12 +8,6 @@
 source ~/env-keras/bin/activate
 export PATH=$PATH:/tudelft.net/staff-bulk/ewi/insy/DBL/smakrod/local-blast-install/ncbi-blast-2.5.0+/bin/
 
-#so that numpy does not take up all the threads
-export MKL_NUM_THREADS=1
-export NUMEXPR_NUM_THREADS=1
-export OMP_NUM_THREADS=1
-
-
 
 species=$1
 fold=$2

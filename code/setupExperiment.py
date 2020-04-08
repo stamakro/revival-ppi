@@ -36,17 +36,20 @@ print('Loading go...')
 print('Loading experimental PPI network...')
 
 Aexp = getPPInetwork(species, 'biogrid')
-Aexp2 = getPPInetwork(species, 'experiments')
+try:
+    Aexp2 = getPPInetwork(species, 'experiments')
 
-if np.max(Aexp2) > 0.:
+    if np.max(Aexp2) > 0.:
 
-    if thresholdType == 'median':
-        threshold = np.median(Aexp2[Aexp2 > 0])
+        if thresholdType == 'median':
+            threshold = np.median(Aexp2[Aexp2 > 0])
 
-    Aexp2 = (Aexp2 >= threshold).astype(int)
-    Aexp = np.maximum(Aexp, Aexp2)
+        Aexp2 = (Aexp2 >= threshold).astype(int)
+        Aexp = np.maximum(Aexp, Aexp2)
+except FileNotFoundError:
+    pass
 
-for root, _, names in os.walk('../data/yeast/interactions/final/string/'):
+for root, _, names in os.walk('../data/' + species + '/interactions/final/string/'):
 
     datasources = []
 
@@ -153,6 +156,7 @@ for fold, (train, test) in enumerate(cv.split(Y)):
 
     #np.save(directory + '/fold' + str(fold) + '/icvec.npy', ic)
 
+print('!')
 
 try:
     os.mkdir('../data/' + species + '/networks/')
@@ -172,7 +176,6 @@ for i in range(F + 1):
 				if ind1 > ind2:
 					fw.write(str(ind1) + '\t' + str(ind2) + '\n')
 
-		break
 	else:
 
 		for j,p in enumerate(combinations(range(F), i)):
@@ -196,6 +199,6 @@ for i in range(F + 1):
 
 
 	#print('starting n2v')
-	#cmd = 'python node2vec/src/main.py --input tmp.network --output ../networks/emb' + str(i) + '.emb' 
+	#cmd = 'python node2vec/src/main.py --input tmp.network --output ../networks/emb' + str(i) + '.emb'
 	#call(cmd, shell=True)
 	#break

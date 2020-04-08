@@ -1,9 +1,9 @@
 #! /bin/sh
-#SBATCH --partition=general --qos=long
+#SBATCH --partition=general --qos=short
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=16000
-#SBATCH --time=07-00:00:00
-#SBATCH --job-name=stringdb
+#SBATCH --time=03:00:00
+#SBATCH --job-name=evalstring
 #SBATCH --mail-user=stavrosmakrodi
 #SBATCH --mail-type=ALL
 

@@ -48,6 +48,20 @@ then
 
 	python createAdjacencyMatrix.py $1;
 
+elif [ $1 == "ecoli" ];
+then
+	#remove header
+	tail -n+36 $path"ppi-biogrid.txt" > $path"ppi-biogrid-noheader.txt";
+	#remove interactions with proteins from other species
+	awk -F "\t" '$10 == "316407" && $11=="316407" {print $0}' $path"ppi-biogrid-noheader.txt" > $path"ppi-biogrid-noheader-withinspecies.txt";
+	#keep physical interactions only
+	grep -v -f biogrid-genetic-interactions-codes.txt $path"ppi-biogrid-noheader-withinspecies.txt" > $path"ppi-biogrid-physical.txt";
+
+	python makeNetwork.py $1;
+
+	python createAdjacencyMatrix.py $1;
+
+
 elif [ $1 == "celegans" ];
 then
 	#remove header

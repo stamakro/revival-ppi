@@ -7,9 +7,12 @@ from scipy.special import binom
 from scipy.spatial.distance import cdist
 from scipy.sparse import csr_matrix
 from routinesnetworks import *
+from routinesgo import semanticDistance
 import os
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.linear_model import LogisticRegression
 from sklearn.multioutput import MultiOutputClassifier
+from sklearn.metrics import f1_score
+
 
 experimentPath = sys.argv[1]
 stuff = experimentPath.split('/')[2]
@@ -41,26 +44,39 @@ except FileExistsError:
 print('Loading go...')
 [Y, geneNames, termNames, gene2row, term2col] = goLoader(species)
 
+with open(experimentPath + 'icDict.pkl', 'rb') as f:
+    icDict = pickle.load(f)
+
+ic = np.array([icDict[t] for t in termNames])
+
 print('Loading experimental PPI network...')
 
 Aexp = getPPInetwork(species, 'biogrid')
 assert np.max(np.abs((Aexp - Aexp.T)) < 1e-10)
 
-Aexp2 = getPPInetwork(species, 'experiments')
-assert np.max(np.abs((Aexp2 - Aexp2.T)) < 1e-10)
+try:
+    Aexp2 = getPPInetwork(species, 'experiments')
+    assert np.max(np.abs((Aexp2 - Aexp2.T)) < 1e-10)
 
-if np.max(Aexp2) > 0.:
-	threshold = np.median(Aexp2[Aexp2 > 0])
-	Aexp2 = (Aexp2 >= threshold).astype(int)
-	Aexp = np.maximum(Aexp, Aexp2)
+    if np.max(Aexp2) > 0.:
+    	threshold = np.median(Aexp2[Aexp2 > 0])
+    	Aexp2 = (Aexp2 >= threshold).astype(int)
+    	Aexp = np.maximum(Aexp, Aexp2)
+except FileNotFoundError:
+    pass
 
 Aexp = Aexp.astype(float)
 
-if species != 'tomato':
-	datasources = np.array(['coexpression', 'neighborhood_transferred', 'coexpression_transferred', 'experiments_transferred', 'textmining', 'cooccurence','fusion', 'textmining_transferred', 'homology'])
+if species == 'tomato':
+	datasources = np.array(['neighborhood_transferred', 'coexpression_transferred', 'experiments_transferred', 'textmining', 'cooccurence','fusion', 'textmining_transferred', 'homology'])
+
+elif species == 'ecoli':
+	datasources = np.array(['neighborhood', 'neighborhood_transferred', 'coexpression_transferred', 'experiments_transferred', 'textmining', 'cooccurence','fusion', 'textmining_transferred', 'homology'])
+
 
 else:
-	datasources = np.array(['neighborhood_transferred', 'coexpression_transferred', 'experiments_transferred', 'textmining', 'cooccurence','fusion', 'textmining_transferred', 'homology'])
+	datasources = np.array(['coexpression', 'neighborhood_transferred', 'coexpression_transferred', 'experiments_transferred', 'textmining', 'cooccurence','fusion', 'textmining_transferred', 'homology'])
+
 
 AA = np.zeros((datasources.shape[0], Aexp.shape[0], Aexp.shape[1]))
 for i, ds in enumerate(datasources):
@@ -88,6 +104,13 @@ for i in range(1, F + 1):
 	ss += binom(F, i)
 
 ss = int(ss)
+
+local_fmax = np.zeros((ss+1,))
+global_fmax = np.zeros((ss+1,))
+
+local_smin = np.zeros((ss+1,))
+global_smin = np.zeros((ss+1,))
+coverage = np.zeros((ss+1,))
 
 n_folds = 5
 
@@ -124,6 +147,7 @@ for fold, (train, test) in enumerate(cv.split(Y)):
 	counter = 0
 	for i in range(F + 1):
 
+
 		if i == 0:
 			if classifier == 'gba' and not os.path.exists(experimentPath + 'fold' + str(fold_nr) + '/ppi/0_knn.pkl'):
 				pp_1hop = predict('gba', atest=Aexp[test][:, train], ytrain=Ytrain)
@@ -136,23 +160,22 @@ for fold, (train, test) in enumerate(cv.split(Y)):
 				with open(experimentPath + 'fold' + str(fold_nr) + '/ppi/0_knn.pkl', 'wb') as fw:
 					pickle.dump(predictions, fw)
 
-			elif classifier == 'n2v_lda' and not os.path.exists(experimentPath + 'fold' + str(fold_nr) + '/n2v/0_lda.pkl'):
+			elif classifier == 'n2v_lr' and not os.path.exists(experimentPath + 'fold' + str(fold_nr) + '/n2v/0_lr.pkl'):
 				with open('../data/' + species + '/networks/tmp0.emb') as f:
 					for i, line in enumerate(f):
 						if i == 0:
 							n2vDim = int(line.split()[1])
 							X = np.zeros((Aexp.shape[0], n2vDim))
 						else:
-							fields = line.split()	
+							fields = line.split()
 							assert len(fields) == n2vDim + 1
 							X[int(fields[0])] = np.array(fields[1:]).astype(float)
 				Xtrain = X[train]
 				Xtest = X[test]
 				ii_tr = np.where(np.max(np.abs(Xtrain), axis=1) > 0.)[0]
 				ii_ts = np.where(np.max(np.abs(Xtest), axis=1) > 0.)[0]
-				clf = MultiOutputClassifier(LinearDiscriminantAnalysis()).fit(Xtrain[ii_tr], Ytrain[ii_tr])
+				clf = MultiOutputClassifier(LogisticRegression()).fit(Xtrain[ii_tr], Ytrain[ii_tr])
 				y = clf.predict_proba(Xtest[ii_ts])
-				sys.exit(0)
 
 			elif classifier == 'n2v_knn' and not os.path.exists(experimentPath + 'fold' + str(fold_nr) + '/n2v/0_knn.pkl'):
 				with open('../data/' + species + '/networks/tmp0.emb') as f:
@@ -161,7 +184,7 @@ for fold, (train, test) in enumerate(cv.split(Y)):
 							n2vDim = int(line.split()[1])
 							X = np.zeros((Aexp.shape[0], n2vDim))
 						else:
-							fields = line.split()	
+							fields = line.split()
 							assert len(fields) == n2vDim + 1
 							X[int(fields[0])] = np.array(fields[1:]).astype(float)
 				Xtrain = X[train]
@@ -169,19 +192,33 @@ for fold, (train, test) in enumerate(cv.split(Y)):
 				Ypred = np.zeros(Ytest.shape)
 				ii_tr = np.where(np.max(np.abs(Xtrain), axis=1) > 0.)[0]
 				ii_ts = np.where(np.max(np.abs(Xtest), axis=1) > 0.)[0]
-				nn = np.argmin(cdist(Xtest[ii_ts], Xtrain[ii_], metric='cosine'), axis=1)
-				sys.exit(0)
-				
+				coverage[counter] = ii_ts.shape[0] / Xtest.shape[0]
+				empty_ts = np.where(np.max(np.abs(Xtest), axis=1) == 0.)[0]
+				k = 5
+				nn = np.argsort(cdist(Xtest, Xtrain[ii_tr], metric='cosine'), axis=1)[:, :5]
+				ypred = np.sum(Ytrain[nn], axis=1) / k
+				ypred[empty_ts] = 0
+
+				global_fmax[counter], global_smin[counter], _ = evaluate(Ytest, ypred, ic, np.linspace(0., 1., k+1))
+				#global_smin[counter] = semanticDistance(Ytest, Ypred, ic)[2]
+
+				if empty_ts.shape[0] > 0:
+					local_fmax[counter], local_smin[counter], _ = evaluate(Ytest[ii_ts], ypred[ii_ts], ic, np.linspace(0., 1., k+1))
+
+				else:
+					local_fmax[counter] = global_fmax[counter]
+					local_smin[counter] = global_smin[counter]
+
+
 		else:
 
 			for j,p in enumerate(combinations(range(F), i)):
 				counter += 1
 
 				#print('Fold:%d, Iteration %d/%d' % (fold, counter, ss))
-				sys.stdout.flush()
 				if classifier == 'gba' and os.path.exists(experimentPath + 'fold' + str(fold_nr) + '/ppi/' + str(counter) + '_knn.pkl'):
 					continue
-				print('Fold:%d, Iteration %d/%d' % (fold, counter, ss))
+				print('Fold:%d, Iteration %d/%d' % (fold, counter, ss), flush=True)
 				Apred = integrateStringScores(AA[list(p)])
 
 				if thresholdType == 'median':
@@ -204,3 +241,40 @@ for fold, (train, test) in enumerate(cv.split(Y)):
 
 					with open(experimentPath + 'fold' + str(fold_nr) + '/ppi/' + str(counter) + '_knn.pkl', 'wb') as fw:
 						pickle.dump(pp, fw)
+
+				elif classifier == 'n2v_knn':
+
+					with open('../data/' + species + '/networks/tmp' + str(counter) + '.emb') as f:
+						for i, line in enumerate(f):
+							if i == 0:
+								n2vDim = int(line.split()[1])
+								X = np.zeros((Aexp.shape[0], n2vDim))
+							else:
+								fields = line.split()
+								assert len(fields) == n2vDim + 1
+								X[int(fields[0])] = np.array(fields[1:]).astype(float)
+					Xtrain = X[train]
+					Xtest = X[test]
+					Ypred = np.zeros(Ytest.shape)
+					ii_tr = np.where(np.max(np.abs(Xtrain), axis=1) > 0.)[0]
+					ii_ts = np.where(np.max(np.abs(Xtest), axis=1) > 0.)[0]
+					empty_ts = np.where(np.max(np.abs(Xtest), axis=1) == 0.)[0]
+					coverage[counter] = ii_ts.shape[0] / Xtest.shape[0]
+					k = 5
+					nn = np.argsort(cdist(Xtest, Xtrain[ii_tr], metric='cosine'), axis=1)[:, :5]
+					ypred = np.sum(Ytrain[nn], axis=1) / k
+					ypred[empty_ts] = 0
+
+					global_fmax[counter], global_smin[counter], _ = evaluate(Ytest, ypred, ic, np.linspace(0., 1., k+1))
+					#global_smin[counter] = semanticDistance(Ytest, Ypred, ic)[2]
+
+					if empty_ts.shape[0] > 0:
+						local_fmax[counter], local_smin[counter], _ = evaluate(Ytest[ii_ts], ypred[ii_ts], ic, np.linspace(0., 1., k+1))
+
+					else:
+						local_fmax[counter] = global_fmax[counter]
+						local_smin[counter] = global_smin[counter]
+
+if classifier == 'n2v_knn':
+	with open(experimentPath + 'fold' + str(fold_nr) + '/performance_n2v_5nn.pkl', 'wb') as f:
+		pickle.dump((coverage, global_fmax, local_fmax, global_smin, local_smin), f)

@@ -1,8 +1,8 @@
 #! /bin/sh
-#SBATCH --partition=general --qos=short
+#SBATCH --partition=general --qos=long
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=32000
-#SBATCH --time=02:00:00
+#SBATCH --mem=64000
+#SBATCH --time=08:00:00
 #SBATCH --job-name=stringdb
 
 
@@ -15,7 +15,9 @@ export OMP_NUM_THREADS=1
 
 
 path=$1
-clf="gba"
-fold=$2
+clf=$2
+#gba, n2v_knn
+fold=$3
+
 
 python stringExperiment.py $path $clf $fold

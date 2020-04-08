@@ -512,6 +512,117 @@ def makeNetworkTomato(annotationPrefix):
 
 
 
+def makeNetworkEcoli(annotationPrefix):
+	path = '../data/ecoli/interactions/'
+
+	tair2uni = dict()
+	uni2tair = dict()
+
+
+	with open('../data/ecoli/annotations/' + annotationPrefix + 'geneNames.pkl', 'rb') as f:
+		geneNames = pickle.load(f)
+
+
+	ppiGenes = set()
+	with open('../data/ecoli/interactions/ppi-biogrid-physical.txt') as f:
+		for line in f:
+			fields = line.split()
+			ppiGenes.add(fields[0])
+			ppiGenes.add(fields[1])
+
+	annotatedGenes = set(geneNames)
+
+	sn = dict()
+	ol = dict()
+	sp = dict()
+
+	currentNr = '-1'
+
+	with open(path + 'biogrid-ecoli-ids.tab') as f:
+		for line in f:
+			nr, gid, db, species = line.split('\t')
+
+			if nr != currentNr:
+				ignore = False
+				currentNr = nr
+
+			assert species == 'Escherichia coli\n'
+
+			if db == 'SYSTEMATIC NAME':
+				assert nr not in sn or sn[nr] == gid
+				if gid not in ppiGenes:
+					ignore = True
+
+				if not ignore:
+					sn[nr] = gid
+
+			elif db == 'ORDERED LOCUS' and not ignore:
+				assert nr not in ol or ol[nr] == gid
+				ol[nr] = gid
+
+			elif db == 'SWISS-PROT' and not ignore:
+				assert nr not in sp or sp[nr] == gid
+				sp[nr] = gid
+
+	#not in biogrid text file but on swissprot
+	sp['4260644'] = 'P0ABP3'
+	sp['4262596'] = 'P23173'
+	sp['4262984'] = 'P69828'
+
+
+	for k in sp:
+		uni = sp[k]
+		tair = sn[k]
+
+		assert uni not in uni2tair
+		assert tair not in tair2uni
+		#everything is uniquely mapped
+		uni2tair[uni] = tair
+		tair2uni[tair] = uni
+
+
+	partners = dict()
+	with open(path + 'ppi-clean', 'w') as fw:
+		with open(path + 'ppi-biogrid-physical.txt') as fr:
+			for i, line in enumerate(fr):
+
+				fields = line.split('\t')
+				p1 = fields[0]
+				p2 = fields[1]
+
+
+				if p1 == p2:
+					#homodimer etc.
+					continue
+
+
+				if p1 not in tair2uni or p2 not in tair2uni:
+					continue
+
+				p1 = tair2uni[p1]
+				p2 = tair2uni[p2]
+
+				if p1 not in annotatedGenes or p2 not in annotatedGenes:
+					continue
+
+				if p1 in partners and p2 in partners[p1]:
+					#duplicate line
+					#print('duplicate line')
+					continue
+
+				if p2 in partners and p1 in partners[p2]:
+					#print('reverse')
+					#we've seen the reverse order pair
+					continue
+
+				if p1 not in partners:
+					partners[p1] = set([p2])
+				else:
+					partners[p1].add(p2)
+
+
+				fw.write(p1 + '\t' + p2 + '\n')
+
 
 
 species = sys.argv[1]
@@ -529,3 +640,5 @@ elif species == 'tomato':
 	makeNetworkTomato(annotationPrefix)
 elif species == 'celegans':
 	makeNetworkWorm(annotationPrefix)
+elif species == 'ecoli':
+	makeNetworkEcoli(annotationPrefix)

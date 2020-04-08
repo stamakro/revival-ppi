@@ -1,8 +1,8 @@
 #! /bin/sh
-#SBATCH --partition=general --qos=long
+#SBATCH --partition=general --qos=short
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=8000
-#SBATCH --time=14:30:00
+#SBATCH --time=00:30:00
 #SBATCH --job-name=n2v
 
 
@@ -19,8 +19,7 @@ numberNets=$(ls ../data/$1/networks/*.network | wc -l)
 
 echo $numberNets
 
-#for (( i=0; i < $numberNets; i++ )); 
-for (( i=$numberNets; i > 0; i-- )); 
+for (( i=0; i < $numberNets; i++ )); 
 do
 	echo $i;
 	if [ ! -f "../data/"$1"/networks/tmp"$i".emb" ];

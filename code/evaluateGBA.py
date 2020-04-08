@@ -139,7 +139,12 @@ for fold in range(nFolds):
 
     local_fmax[2], local_smin[2], local_nsmin[2] = evaluate(Ytrue2, Ypost2_1h, ic3)
 
-    for stringDs in range(1, 512):
+    if 'tomato' in experimentPath:
+        maxRange = 256
+    else:
+        maxRange = 512
+
+    for stringDs in range(1, maxRange):
         print('fold %d, network %d' % (fold, stringDs), flush=True)
 
 
