@@ -13,7 +13,8 @@ species = stuff2[0]
 
 fignames = ['coverage', 'global', 'local']
 
-classifiers = ['gba_1hop', 'gba_2hop', 'n2v_5nn']
+classifiers = ['gba_1hop', 'gba+blast_1hop', 'n2v_5nn']
+classifiers = ['gba_1hop']
 n_folds = 5
 
 if species == 'tomato':
@@ -48,11 +49,19 @@ for clf in classifiers:
     meanMatrix = np.mean(bigMatrix, axis=0)
     stdMatrix = np.std(bigMatrix, axis=0, ddof=1)
 
-    if clf == 'gba_1hop' or clf == 'gba_2hop':
+    if clf == 'gba_1hop' or clf == 'gba_2hop' :
         blast = meanMatrix[:,0]
         biogrid = meanMatrix[:,1]
         blastAndBiogrid = meanMatrix[:,2]
         stringStart = 3
+
+    elif clf == 'gba+blast_1hop':
+        blast = meanMatrix[:,0]
+        biogrid = meanMatrix[:,2]
+        blastAndBiogrid = meanMatrix[:,2]
+        stringStart = 3
+
+
     else:
         biogrid = meanMatrix[:,0]
         stringStart = 1
@@ -126,9 +135,9 @@ for clf in classifiers:
     ax_g_s.set_xticks([2*i for i in range(ds+2)])
     ax_g_s.set_xticklabels([str(i) for i in range(ds+2)])
     ax_g_f.set_xlabel('# of data sources', fontsize=20)
-    ax_g_f.set_ylabel('global Fmax', fontsize=20)
+    ax_g_f.set_ylabel('Fmax', fontsize=20)
     ax_g_s.set_xlabel('# of data sources', fontsize=20)
-    ax_g_s.set_ylabel('global Smin', fontsize=20)
+    ax_g_s.set_ylabel('Smin', fontsize=20)
     ax_g_f.set_xlim(-1, 2*ds+2)
     ax_g_s.set_xlim(-1, 2*ds+2)
 
@@ -144,7 +153,8 @@ for clf in classifiers:
 
     ax_g_f.legend()
     ax_g_s.legend()
-    figures[1].suptitle(species + ', ' + clf)
+    #figures[1].suptitle(species + ', ' + clf)
+    figures[1].tight_layout()
 
 
     ax_l_f.plot(np.arange(0,2*mF_local.shape[0], 2), mF_local, color='C1')
@@ -192,7 +202,7 @@ for clf in classifiers:
 
     for jj, fig in enumerate(figures):
         fig.savefig('../figures/' + species + '_' + clf + '_' + fignames[jj] + '.png')
-	#fig.savefig('../figures/' + species + '_' + clf + '.png')
+        fig.savefig('../figures/' + species + '_' + clf + '_' + fignames[jj] + '.eps', dpi=1200)
 
 
 plt.close('all')

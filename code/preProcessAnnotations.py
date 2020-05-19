@@ -24,7 +24,7 @@ authorECs = ['TAS', 'NAS']
 curatorECs = ['IC']
 electronicECs = ['IEA']
 
-unwantedECs = electronicECs + computationalECs + ['NAS']
+unwantedECs = electronicECs + computationalECs + ['NAS'] 
 try:
 	removeIpi = int(sys.argv[3])
 except IndexError:
@@ -291,6 +291,7 @@ else:
 print(Y.shape)
 assert Y.shape == (len(geneNames), len(termNames))
 
+sys.exit(0)
 
 if species == 'tomato':
 	with open(path + prefix + 'gene2uniprot.pkl', 'wb') as f:

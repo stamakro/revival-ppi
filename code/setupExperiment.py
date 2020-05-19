@@ -65,6 +65,23 @@ for root, _, names in os.walk('../data/' + species + '/interactions/final/string
     datasources = np.array(datasources)
 
 
+
+if species == 'tomato':
+        datasources2 = np.array(['neighborhood_transferred', 'coexpression_transferred', 'experiments_transferred', 'textmining', 'cooccurence','fusion', 'textmining_transferred', 'homology'])
+
+elif species == 'ecoli':
+        datasources2 = np.array(['neighborhood', 'neighborhood_transferred', 'coexpression_transferred', 'experiments_transferred', 'textmining', 'cooccurence','fusion', 'textmining_transferred', 'homology'])
+
+
+else:
+        datasources2 = np.array(['coexpression', 'neighborhood_transferred', 'coexpression_transferred', 'experiments_transferred', 'textmining', 'cooccurence','fusion', 'textmining_transferred', 'homology'])
+
+assert set(datasources) == set(datasources2)
+datasources = datasources2
+
+
+
+
 AA = np.zeros((datasources.shape[0], Aexp.shape[0], Aexp.shape[1]))
 for i, ds  in enumerate(datasources):
     AA[i] = getPPInetwork(species, ds)
@@ -156,7 +173,6 @@ for fold, (train, test) in enumerate(cv.split(Y)):
 
     #np.save(directory + '/fold' + str(fold) + '/icvec.npy', ic)
 
-print('!')
 
 try:
     os.mkdir('../data/' + species + '/networks/')
@@ -190,8 +206,10 @@ for i in range(F + 1):
 
 			Apred = (Apred >= threshold).astype(int)
 
+
 			A = np.maximum(Aexp, Apred)
 
+			ii, jj = np.where(A)
 			with open('../data/' + species + '/networks/tmp' + str(counter) + '.network', 'w') as fw:
 				for ind1, ind2 in zip(ii, jj):
 					if ind1 > ind2:

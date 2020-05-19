@@ -52,11 +52,11 @@ ic = np.array([icDict[t] for t in termNames])
 print('Loading experimental PPI network...')
 
 Aexp = getPPInetwork(species, 'biogrid')
-assert np.max(np.abs((Aexp - Aexp.T)) < 1e-10)
+assert np.max(np.abs((Aexp - Aexp.T))) < 1e-10
 
 try:
     Aexp2 = getPPInetwork(species, 'experiments')
-    assert np.max(np.abs((Aexp2 - Aexp2.T)) < 1e-10)
+    assert np.max(np.abs((Aexp2 - Aexp2.T))) < 1e-10
 
     if np.max(Aexp2) > 0.:
     	threshold = np.median(Aexp2[Aexp2 > 0])
@@ -126,7 +126,6 @@ for fold, (train, test) in enumerate(cv.split(Y)):
 	if fold != fold_nr:
 		continue
 
-
 	Ytrain = Y[train]
 	Ytest = Y[test]
 	predictions = {'terms': termNames, 'gt': csr_matrix(Ytest)}
@@ -151,7 +150,7 @@ for fold, (train, test) in enumerate(cv.split(Y)):
 		if i == 0:
 			if classifier == 'gba' and not os.path.exists(experimentPath + 'fold' + str(fold_nr) + '/ppi/0_knn.pkl'):
 				pp_1hop = predict('gba', atest=Aexp[test][:, train], ytrain=Ytrain)
-
+				
 				A2 = Aexp.dot(Aexp)
 				pp_2hop = predict('gba', atest=A2[test][:, train], ytrain=Ytrain)
 

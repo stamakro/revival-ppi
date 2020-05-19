@@ -83,6 +83,8 @@ python naive.py "../experiments/"$species"_"$ontology$annoPrefix$thresholdType"/
 python plotPerformance.py "../experiments/"$species"_"$ontology$annoPrefix$thresholdType"/"
 
 
+mkdir "../data/"$species"/degrees"
+
 exit
 
 

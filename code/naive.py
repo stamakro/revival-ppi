@@ -45,5 +45,8 @@ for fold, (train, test) in enumerate(cv.split(Y)):
 
     fmax[fold], smin[fold], _ = evaluate(Ytest, Ypred, ic, np.linspace(0, 1.,101))
 
+print(np.mean(fmax), np.std(fmax, ddof=1))
+
+
 with open(experimentPath + 'naive.pkl', 'wb') as f:
     pickle.dump([(np.mean(fmax), np.std(fmax, ddof=1)), (np.mean(smin), np.std(smin, ddof=1))], f)

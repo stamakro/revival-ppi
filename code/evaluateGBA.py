@@ -11,6 +11,11 @@ from routinesnetworks import evaluate
 experimentPath = sys.argv[1]
 nhops = int(sys.argv[2])
 currentFold = int(sys.argv[3])
+try:
+    blastCombo = int(sys.argv[4])
+except IndexError:
+    blastCombo = 0
+
 
 assert nhops == 1 or nhops == 2
 nFolds = 5
@@ -95,6 +100,8 @@ for fold in range(nFolds):
 
     coverage[1] = pred.shape[0] / len(testNames)
 
+    Ypost_1h[np.where(np.isnan(Ypost_1h))] = 0.0
+
     total_fmax[1], total_smin[1], total_nsmin[1] = evaluate(Ytrue, Ypost_1h, ic2)
 
     Ytrue2 = Ytrue[pred]
@@ -103,6 +110,8 @@ for fold in range(nFolds):
 
     print('combo\'s', flush=True)
 
+
+    biogridTerms = biogrid['terms']
     allterms = list(set(termNames).union(set(biogrid['terms'])))
     ic3 = np.zeros((len(allterms),))
     term2colFull = dict()
@@ -154,17 +163,74 @@ for fold in range(nFolds):
         #Ytrue = biogrid['gt'].toarray()
         Ypost_1h = biogrid[nhops-1].toarray()
 
-        assert np.min(np.sum(Ytrue, 1)) > 0
-        pred = np.unique(np.where(np.logical_not(np.isnan(Ypost_1h)))[0])
+        if blastCombo:
+            allterms = list(set(termNames).union(set(biogridTerms)))
+            ic3 = np.zeros((len(allterms),))
+            term2colFull = dict()
+            for kk, tt in enumerate(allterms):
+                term2colFull[tt] = kk
+                ic3[kk] = icDict[tt]
 
-        coverage[len(classifiers) + stringDs - 1] = pred.shape[0] / len(testNames)
-        #print('Coverage Biogrid 1-hop: %3.1f' % (100 * pc_coverage), end='%\n')
+            Ytrue_combo = np.zeros((len(testNames), len(allterms)))
+            Ypred_combo1 = np.ones((len(testNames), len(allterms)))
 
-        total_fmax[len(classifiers) + stringDs - 1], total_smin[len(classifiers) + stringDs - 1], total_nsmin[len(classifiers) + stringDs - 1] = evaluate(Ytrue, Ypost_1h, ic2)
+            Ypost_1h[np.isnan(Ypost_1h)] = 0.
 
-        Ytrue2 = Ytrue[pred]
-        Ypost2_1h = Ypost_1h[pred]
-        local_fmax[len(classifiers) + stringDs - 1], local_smin[len(classifiers) + stringDs - 1], local_nsmin[len(classifiers) + stringDs - 1] = evaluate(Ytrue2, Ypost2_1h, ic2)
+            for jj, tt in enumerate(allterms):
+                if tt in term2colBiogrid:
+                    Ytrue_combo[:, jj] = Ytrue[:, term2colBiogrid[tt]]
+                    Ypred_combo1[:, jj] *= (1 - Ypost_1h[:, term2colBiogrid[tt]])
 
-with open(fullPath + 'performance_gba_' + str(nhops) + 'hop.pkl', 'wb') as f:
-    pickle.dump((coverage, total_fmax, local_fmax, total_smin, local_smin), f)
+
+                if tt in term2col:
+                    Ypred_combo1[:, jj] *= (1 - Ypost[:, term2col[tt]])
+
+
+            Ypred_combo1 = 1 - Ypred_combo1
+
+
+            assert np.min(np.sum(Ytrue, 1)) > 0
+            pred = np.unique(np.where(np.logical_not(np.isnan(Ypred_combo1)))[0])
+
+            coverage[len(classifiers) + stringDs - 1] = pred.shape[0] / len(testNames)
+            #print('Coverage Biogrid 1-hop: %3.1f' % (100 * pc_coverage), end='%\n')
+
+            total_fmax[len(classifiers) + stringDs - 1], total_smin[len(classifiers) + stringDs - 1], total_nsmin[len(classifiers) + stringDs - 1] = evaluate(Ytrue_combo, Ypred_combo1, ic3)
+
+            if coverage[len(classifiers) + stringDs - 1] < 1:
+
+                Ytrue2 = Ytrue_combo[pred]
+                Ypost2_1h = Ypred_combo1[pred]
+                local_fmax[len(classifiers) + stringDs - 1], local_smin[len(classifiers) + stringDs - 1], local_nsmin[len(classifiers) + stringDs - 1] = evaluate(Ytrue2, Ypost2_1h, ic3)
+
+            else:
+                local_fmax[len(classifiers) + stringDs - 1], local_smin[len(classifiers) + stringDs - 1], local_nsmin[len(classifiers) + stringDs - 1] = total_fmax[len(classifiers) + stringDs - 1], total_smin[len(classifiers) + stringDs - 1], total_nsmin[len(classifiers) + stringDs - 1]
+
+
+
+        else:
+
+            assert np.min(np.sum(Ytrue, 1)) > 0
+            pred = np.unique(np.where(np.logical_not(np.isnan(Ypost_1h)))[0])
+
+            coverage[len(classifiers) + stringDs - 1] = pred.shape[0] / len(testNames)
+            #print('Coverage Biogrid 1-hop: %3.1f' % (100 * pc_coverage), end='%\n')
+
+            total_fmax[len(classifiers) + stringDs - 1], total_smin[len(classifiers) + stringDs - 1], total_nsmin[len(classifiers) + stringDs - 1] = evaluate(Ytrue, Ypost_1h, ic2)
+
+            if coverage[len(classifiers) + stringDs - 1] < 1:
+
+                Ytrue2 = Ytrue[pred]
+                Ypost2_1h = Ypost_1h[pred]
+                local_fmax[len(classifiers) + stringDs - 1], local_smin[len(classifiers) + stringDs - 1], local_nsmin[len(classifiers) + stringDs - 1] = evaluate(Ytrue2, Ypost2_1h, ic2)
+
+            else:
+                local_fmax[len(classifiers) + stringDs - 1], local_smin[len(classifiers) + stringDs - 1], local_nsmin[len(classifiers) + stringDs - 1] = total_fmax[len(classifiers) + stringDs - 1], total_smin[len(classifiers) + stringDs - 1], total_nsmin[len(classifiers) + stringDs - 1]
+
+
+if not blastCombo:
+    with open(fullPath + 'performance_gba_' + str(nhops) + 'hop.pkl', 'wb') as f:
+        pickle.dump((coverage, total_fmax, local_fmax, total_smin, local_smin), f)
+else:
+    with open(fullPath + 'performance_gba+blast_' + str(nhops) + 'hop.pkl', 'wb') as f:
+        pickle.dump((coverage, total_fmax, local_fmax, total_smin, local_smin), f)
