@@ -8,29 +8,29 @@ This repository contains code for reproducing the article *Sequence-based protei
 
 
 ## 1. Data
-All data used in these experiments for *Sacharomyces cerevisiae*, *Escherichia coli* *Arabidopsis thaliana* and *Solanum lycopersicum* are from the public domain and can be downloaded from the corresponding websites, as detailed below. Data needs to be save at the appropriate directory. The species names are "yeast", "ecoli", "arabidopsis" and "tomato"
+All data used in these experiments for *Sacharomyces cerevisiae*, *Escherichia coli* *Arabidopsis thaliana* and *Solanum lycopersicum* are from the public domain and can be downloaded from the corresponding websites, as detailed below. Data needs to be save at the appropriate directory. The species names are "yeast", "ecoli", "arabidopsis" and "tomato".
 
 ### PPI data from BIOGRID
 We used version 3.5.181
-https://downloads.thebiogrid.org/BioGRID/Release-Archive/BIOGRID-3.5.181/
-Save at data/$speciesName$/interactions/ppi-biogrid.txt
+https://downloads.thebiogrid.org/BioGRID/Release-Archive/BIOGRID-3.5.181/ .\
+Save at `data/$speciesName$/interactions/ppi-biogrid.txt`.
 
 ### PPI data from STRING
 We used version 11.0
-https://string-db.org/cgi/download.pl
-Save at data/$speciesName$/interactions/ppi-string.txt
+https://string-db.org/cgi/download.pl .\
+Save at `data/$speciesName/interactions/ppi-string.txt`.
 
 ### Protein sequences
-Protein sequences were downloaded from SwissProt version 2019_11:
-ftp://ftp.uniprot.org/pub/databases/uniprot/previous_releases/release-2019_11/knowledgebase/
-Save at data/$speciesName$/sequences/sequences.fasta
+Protein sequences were downloaded from SwissProt version 2019_11:\
+ftp://ftp.uniprot.org/pub/databases/uniprot/previous_releases/release-2019_11/knowledgebase/ .\
+Save at `data/$speciesName/sequences/sequences.fasta`.
 
-For tomato, sequences from the solanum genomics network (https://solgenomics.net/) were also used, available at data/tomato/sequences/sequences_tomatoIDs.fasta
+For tomato, sequences from the solanum genomics network (https://solgenomics.net/) were also used, available at `data/tomato/sequences/sequences_tomatoIDs.fasta`
 
 ### GO annotations
-We used the Gene Ontology released on January 1st 2020 (https://zenodo.org/record/3597529) which is provided at data/go/go.obo
+We used the Gene Ontology released on January 1st 2020, which is provided at `data/go/go.obo`
 
-GO annotations of *S. cerevisae* (version 59), *A. thaliana* (version 170) and SwissProt proteins were downloaded from the Gene Ontology Annotation website ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/old/
+GO annotations of *S. cerevisae* (version 59), *A. thaliana* (version 170) and SwissProt proteins were downloaded from the Gene Ontology Annotation website ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/old/ .\
 For tomato, 
 
 ## 2. Dependencies
