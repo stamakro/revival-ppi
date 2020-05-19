@@ -13,7 +13,7 @@ All data used in these experiments for *Sacharomyces cerevisiae*, *Escherichia c
 ### PPI data from BIOGRID
 We used version 3.5.181
 https://downloads.thebiogrid.org/BioGRID/Release-Archive/BIOGRID-3.5.181/ .\
-Save at `data/$speciesName$/interactions/ppi-biogrid.txt`.
+Save at `data/$speciesName/interactions/ppi-biogrid.txt`.
 
 ### PPI data from STRING
 We used version 11.0
