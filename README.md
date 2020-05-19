@@ -30,7 +30,7 @@ For tomato, sequences from the solanum genomics network (https://solgenomics.net
 ### GO annotations
 We used the Gene Ontology released on January 1st 2020, which is provided at `data/go/go.obo`
 
-GO annotations of *S. cerevisae* (version 59), *A. thaliana* (version 170) and SwissProt proteins were downloaded from the Gene Ontology Annotation website ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/old/ .\
+GO annotations of *S. cerevisae* (version 59), *A. thaliana* (version 170) and SwissProt proteins were downloaded from the Gene Ontology Annotation website [found here](ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/old/) .\
 For tomato, 
 
 ## 2. Dependencies
@@ -55,7 +55,7 @@ After completing all previous steps, execute the following commands:
 Note that several steps (running BLAST, training of PIPR, tuning the hyperparameters of node2vec or evaluating all possible combinations of STRING networks) can take several hours to days unless run massively in parallel. All the experiments described in the article were conducted on a compute cluster multiple CPU's and GPU's. 
 Duration varies a lot depending on the species. Tomato is the smallest, so it can be run in a few hours. Repeating all experiments for arabidopsis without parallelization will take more than one week.
 
-Run `drawFinalFigures.py` to obtain Figure 2 (with values hard-coded, no experiments needed).
-Use `analyzePerformance.py` to measure the effect of individual STRING data sources on the total performances.
-Use `plotPerformance.py` to plot the performance and coverage of STRING data sources and combinations thereof.
+Run `drawFinalFigures.py` to obtain Figure 2 (with values hard-coded, no experiments needed).\
+Use `analyzePerformance.py` to measure the effect of individual STRING data sources on the total performances.\
+Use `plotPerformance.py` to plot the performance and coverage of STRING data sources and combinations thereof.\
 Use `comparePerProtein.py` to plot performance as a function of node degree (as in Figure 3). See inside this script for possible combinations.
