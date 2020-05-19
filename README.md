@@ -30,8 +30,7 @@ For tomato, sequences from the solanum genomics network (https://solgenomics.net
 ### GO annotations
 We used the Gene Ontology released on January 1st 2020, which is provided at `data/go/go.obo`
 
-GO annotations of *S. cerevisae* (version 59), *A. thaliana* (version 170) and SwissProt proteins were downloaded from the Gene Ontology Annotation website [found here](ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/old/) .\
-For tomato, 
+GO annotations of proteins were downloaded from the Gene Ontology website http://current.geneontology.org/products/pages/downloads.html , accessed on 20/02/2020 for yeast and arabidopsis, 13/03/2020 for tomato and 29/03/2020 for E. coli.
 
 ## 2. Dependencies
 For most analyses, we used Python 3.6 and the packages
