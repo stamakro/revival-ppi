@@ -9,20 +9,28 @@ import pickle
 #figure 1, bar chart
 
 species = ['S. cerevisiae', 'E. coli', 'A. thaliana', 'S. lycopersicum']
-names = ['Naive', 'BLAST', 'EXP', 'EXP +\n STRING', 'EXP +\n SEQ']
+names = ['EXP', 'EXP +\n BLAST', 'EXP +\n STRING', 'EXP +\n STRING +\n BLAST', 'EXP +\n SEQ']
 y = np.array([
-[0.31, 0.35, 0.42, 0.49, 0.33],
-[0.29, 0.43, 0.25, 0.46, 0.32],
-[0.28, 0.42, 0.19, 0.48, 0.29],
-[0.23, 0.34, 0.08, 0.61, 0.35]
+[0.42, 0.50, 0.49, 0.54, 0.33],
+[0.25, 0.45, 0.46, 0.58, 0.32],
+[0.19, 0.43, 0.48, 0.54, 0.29],
+[0.08, 0.35, 0.61, 0.60, 0.35]
 ])
 
 yerr = np.array([
-[0.004, 0.004, 0.007, 0.005, 0.003],
-[0.009, 0.021, 0.011, 0.008, 0.007],
-[0.005, 0.007, 0.007, 0.004, 0.004],
-[0.019, 0.025, 0.007, 0.045, 0.016]
+[0.007, 0.007, 0.005, 0.006, 0.005],
+[0.011, 0.020, 0.008, 0.021, 0.007],
+[0.007, 0.006, 0.004, 0.008, 0.004],
+[0.007, 0.025, 0.045, 0.047, 0.016]
 ])
+
+
+naive = np.array([0.31, 0.29, 0.28, 0.23])
+naiveErr = np.array([0.004, 0.009, 0.005, 0.019])
+
+blast = np.array([0.35, 0.43, 0.42, 0.34])
+blastErr = np.array([0.004, 0.021, 0.007, 0.025])
+
 
 x = np.arange(1, 1+y.shape[1])
 
@@ -45,21 +53,29 @@ x = 1.5 * x
 letters = ['a', 'c', 'b', 'd']
 locations = [1, 2, 4, 5]
 fig = plt.figure(figsize=(12,9))
-
+lw = 0.8
 
 for i in range(len(species)):
 
     ax = fig.add_subplot(2,3,locations[i])
 
-    ax.bar(x, y[i], yerr=yerr[i], color=['k', 'C3', 'C0', 'c', 'g'], edgecolor='k')
+    ax.bar(x, y[i], yerr=yerr[i], color=['C0', 'C7', 'C9', 'C8', 'g'], edgecolor='k')
 
     #ax.bar(x[-3:-1], y2[i] - y[i,-3:-1], bottom=y[i, -3:-1], yerr=y2err[i], color=['C0', 'C1'], edgecolor='k', hatch='\\',  label=['GBA' 'node2vec'])
     for j, hh in enumerate(y2[i]):
-        if hh >= y[i, -(3-j)]:
-            ax.bar(x[-(3-j)], hh - y[i,-(3-j)], bottom=y[i,-(3-j)], yerr=y2err[i,j], color='C1', hatch='\\', edgecolor='k')
+        if hh >= y[i, 2*j]:
+            ax.bar(x[2*j], hh - y[i,2*j], bottom=y[i,2*j], yerr=y2err[i,j], color='C1', hatch='\\', edgecolor='k')
         else:
-            ax.bar(x[-(3-j)], hh, bottom=0, yerr=y2err[i,j], color='C1', hatch='\\', edgecolor='k')
+            ax.bar(x[2*j], hh, bottom=0, yerr=y2err[i,j], color='C1', hatch='\\', edgecolor='k')
 
+
+    ax.axhline(naive[i], color='k')
+    ax.axhline(naive[i]+naiveErr[i], color='k', linestyle='--', linewidth=lw)
+    ax.axhline(naive[i]-naiveErr[i], color='k', linestyle='--', linewidth=lw)
+
+    ax.axhline(blast[i], color='C3')
+    ax.axhline(blast[i]+blastErr[i], color='C3', linestyle='--', linewidth=lw)
+    ax.axhline(blast[i]-blastErr[i], color='C3', linestyle='--', linewidth=lw)
 
     ax.set_xticks(x)
     ax.set_xticklabels(names)
