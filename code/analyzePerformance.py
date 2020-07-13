@@ -224,8 +224,6 @@ print('Fmax')
 print('%24s\t%s\t%s\t%s\t%s\t%s' % ('DATASOURCE', 'alone', 'in', 'out', 'diff', 'p-value'))
 for i,d in enumerate(datasources):
 
-	ax = fig.add_subplot(3,3, i+1)
-
 	#ax.scatter(xcoords, meanMatrix[0], color=colors[d2i[i].astype(int)], s=12, alpha=alphas[d2i[i].astype(int)], edgecolor='k')
 	ind1 = np.where(d2i[i])
 	ind2 = np.setdiff1d(np.arange(meanMatrix.shape[1]), ind1)
