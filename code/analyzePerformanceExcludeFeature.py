@@ -216,7 +216,6 @@ print(bestS)
 print(subSm[bestS], subSs[bestS])
 
 
-sys.exit(0)
 xcoords = np.zeros(meanMatrix.shape[1])
 
 counter = stringStart

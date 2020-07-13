@@ -6,7 +6,7 @@ then
 	tail go.obo -n+27 | head -n-73 > go-final.obo;
 fi
 
-species="tomato"
+species=$1
 ontology="P"
 
 thresholdType="median"
@@ -20,6 +20,8 @@ else
   annoPrefix=$ontology"_noIPI_"
 fi
 
+
+mkdir -p data/$species/networks
 
 
 tail -n+13 data/$species/annotations/goa_$species.gaf > data/$species/annotations/goa.gaf

@@ -145,7 +145,6 @@ stdMatrix = np.delete(stdMatrix, [0,2], axis=1)
 biogrid = meanMatrix[:,0]
 stringStart = 1
 
-sys.exit(0)
 xcoords = np.zeros(meanMatrix.shape[1])
 
 counter = stringStart

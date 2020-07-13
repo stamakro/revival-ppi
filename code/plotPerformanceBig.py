@@ -231,9 +231,6 @@ print('PPI+BLAST: %f +/- %f' % (np.mean(f2), np.std(f2, ddof=1)))
 print(ttest_rel(f1, f2))
 
 
-sys.exit(0)
-
-
 
 meanMatrix = meanMatrix2
 stdMatrix = stdMatrix2

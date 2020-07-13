@@ -291,7 +291,6 @@ else:
 print(Y.shape)
 assert Y.shape == (len(geneNames), len(termNames))
 
-sys.exit(0)
 
 if species == 'tomato':
 	with open(path + prefix + 'gene2uniprot.pkl', 'wb') as f:
