@@ -1,6 +1,6 @@
 
-species="yeast"
-inputfile="../data/"$species"/networks/tmp129.network"
+species="arabidopsis"
+inputfile="../data/"$species"/interactions/final/biogrid/netIncludingUnannotated.network"
 
 for nwalks in 5 10 15 20 30
 do
@@ -11,7 +11,7 @@ do
 			for length in 20 40 60 80 100 160
 			do
 			
-				if ! [ -f "node2vec/emb/string/"$species"_"$nwalks"_"$p"_"$q"_"$length"_500.emb" ]
+				if ! [ -f "node2vec/emb/withUnannotated/"$species"_"$nwalks"_"$p"_"$q"_"$length"_500.emb" ]
 				then
 					echo $inputfile $nwalks $p $q $length
 					sbatch tuneN2vWorker.sh $inputfile $nwalks $p $q $length

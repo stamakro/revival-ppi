@@ -84,7 +84,7 @@ for i in range(len(species)):
 
 
 
-ax = fig.add_subplot(2, 3, 3)
+a = fig.add_subplot(2, 3, 3)
 ee = []
 for species in ['yeast', 'ecoli', 'arabidopsis', 'tomato']:
     with open('../data/' + species + '/degrees/0.pkl', 'rb') as f:
@@ -94,9 +94,24 @@ for species in ['yeast', 'ecoli', 'arabidopsis', 'tomato']:
         ee.append(100*E/N)
 
 perc = (y[:,2] - y[:, 0]) / y[:, 0]
-pa = 1 - ((1 - y[:,2]) / (1 - y[:,0]))
+#pa = 1 - ((1 - y[:,2]) / (1 - y[:,0]))
+pa = 1 - ((1 - y[:,0]) / (1 - naive))
 
 ax.scatter(ee, pa, s=60, edgecolor='k')
+
+
+#add downsampled yeast net results
+with open('../results/downsampling_yeast_degree.pkl', 'rb') as f:
+    fmaxR = np.mean(np.mean(pickle.load(f)['gf'], axis=0), axis=1)
+
+#remove 0% missing
+fmaxR = fmaxR[1:]
+
+paR = 1 - ((1 - fmaxR) / (1 - naive[0]))
+fractions = ee[0] * (1 - np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99]) )
+
+ax.scatter(fractions, paR, s=50, color='g')
+#
 
 slope, intercept, rho, pvalue, stderr = linregress(ee, pa)
 xx = np.linspace(np.min(ee), np.max(ee), 3)

@@ -40,12 +40,40 @@ def evaluate(Ytest, Y_posteriors, ic, thresholds=None):
 		#pc_nsd[i] = normalizedSemanticDistance(Ytest, Ypred, ic, True)[2]
 		pc_sd[i] = semanticDistance(Ytest, Ypred, ic)[2]
 		pc_f1[i] = f1_score(Ytest, Ypred, average='samples')
-	#pc_auc = average_precision_score(Ytest, Y_posteriors, average='samples')
 
 	return np.max(pc_f1), np.min(pc_sd), np.min(pc_nsd)
-	#return pc_auc, np.min(pc_sd), np.min(pc_nsd)
 
 
+def evaluateFull(Ytest, Y_posteriors, ic, thresholds=None):
+
+	if thresholds is None:
+ 		thresholds = np.linspace(0.0, 1.0, 51)
+
+
+	pc_f1 = np.zeros((thresholds.shape[0], ))
+	pc_sd = np.ones((thresholds.shape[0], )) * np.sum(ic) * 2.
+
+	pc_pr = np.zeros((thresholds.shape[0], ))
+	pc_ru = np.ones((thresholds.shape[0], )) * np.sum(ic) * 2.
+	pc_mi = np.ones((thresholds.shape[0], )) * np.sum(ic) * 2.
+
+	m = np.max(Y_posteriors)
+
+	for i, thres in enumerate(thresholds):
+		if thres > m:
+			break
+		#print('%d / %d' % (i, thresholds.shape[0]))
+		Ypred = (Y_posteriors >= np.round(thres,2 )).astype(int)
+
+
+		pc_ru[i], pc_mi[i], pc_sd[i] = semanticDistance(Ytest, Ypred, ic)
+		pc_pr[i], _, pc_f1[i], _ = precision_recall_fscore_support(Ytest, Ypred, average='samples')
+
+
+	ft = np.argmax(pc_f1)
+	st = np.argmin(pc_sd)
+
+	return pc_pr[ft], pc_f1[ft], pc_ru[st], pc_mi[st], pc_sd[st]
 
 def predictBayes(Atest, Ytrain, Ytest, ic, thresholds = None):
 

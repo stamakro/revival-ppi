@@ -9,6 +9,7 @@ from itertools import combinations
 from sklearn.metrics import f1_score
 from scipy.stats import spearmanr, pearsonr, wilcoxon
 from routinesnetworks import *
+from statsmodels.stats.multitest import multipletests
 
 def getFmaxPerProtein(method, species, nFolds=5, gbaIndex=-1, node2vecNet='biogrid'):
     path = '../experiments/' + species + '_P_median/'
@@ -400,17 +401,27 @@ else:
         ff1 = []
         ff2 = []
         ff3 = []
+        pvals = []
 
         for ii in indexVals:
             d1 = f1[np.where(indices == ii)]
             d2 = f2[np.where(indices == ii)]
             d3 = f3[np.where(indices == ii)]
 
+            statistic, p = wilcoxon(d1, d2)
+            print(np.median(d1), np.median(d2))
+
             ff1.append(d1)
             ff2.append(d2)
             ff3.append(d3)
-            print(wilcoxon(d1, d2))
+            pvals.append(p)
+            print(statistic, p)
+            print('')
 
+
+        _, pvals, _, _ = multipletests(pvals, method='fdr_bh')
+        print('\n')
+        print(pvals)
         ax = fig.add_subplot(111)
         bp1 = ax.boxplot(ff1, whis=[5, 95], positions=x1, patch_artist=True, medianprops={'color':'k'}, showfliers=False)
         bp2 = ax.boxplot(ff2, whis=[5, 95], positions=x2, patch_artist=True, medianprops={'color':'k'}, showfliers=False)
@@ -434,17 +445,24 @@ else:
 
         ax.set_xlim(-1, np.max(x3)+0.5)
 
-        for jj, ss in zip(x2, ff1):
-            ax.text(jj-0.25, 1.05, str(len(ss)))
-  
+        for cnt, (jj, ss) in enumerate(zip(x2, ff1)):
+            if pvals[cnt] >= 0.05:
+                ax.text(jj-1., 1.05, str(len(ss)), fontsize=14)
+            else:
+                ax.text(jj-1., 1.05, str(len(ss))+'*', fontsize=14)
+
         ax.scatter([], [], color='C0', marker='s', s=30, edgecolor='k', label=name1)
         ax.scatter([], [], color='C1', marker='s', s=30, edgecolor='k', label=name2)
         ax.scatter([], [], color='c', marker='s', s=30, edgecolor='k', label=name3)
-        ax.set_ylim(-0.3, 1.1)
+        ax.set_ylim(-0.3, 1.2)
 
         ax.legend(loc='lower right')
-        ax.set_xlabel('Number of annotated neighbors in EXP network')
-        ax.set_ylabel('F1 score')
+        ax.set_xlabel('Number of annotated neighbors in EXP network', fontsize=16)
+        ax.set_ylabel('F1 score', fontsize=16)
+
+        plt.setp(ax.get_xticklabels(), fontsize=11)
+        plt.setp(ax.get_yticklabels(), fontsize=14)
+        plt.tight_layout()
 
         fig.savefig('../figures/others/' + species + '_degree_' + name1 + '_' + name2 + '_' + name3 + '_perlevel.png')
         fig.savefig('../figures/others/' + species + '_degree_' + name1 + '_' + name2 + '_' + name3 + '_perlevel.eps', dpi=1200)

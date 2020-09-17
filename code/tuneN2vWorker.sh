@@ -1,8 +1,8 @@
 #! /bin/sh
-#SBATCH --partition=general --qos=short
+#SBATCH --partition=general --qos=long
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=10000
-#SBATCH --time=02:30:00
+#SBATCH --mem=5000
+#SBATCH --time=06:00:00
 #SBATCH --job-name=n2v
 
 

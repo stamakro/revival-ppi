@@ -10,139 +10,7 @@ STEPS
 5) make sure that the sequences of all proteins are known (../sequences/proteins.list)
 '''
 
-
-def makeNetworkWorm(annotationPrefix):
-	path = '../data/celegans/interactions/'
-
-	with open('../data/celegans/annotations/' + annotationPrefix +'geneNames.pkl', 'rb') as f:
-		geneNames = pickle.load(f)
-	annotatedGenes = set(geneNames)
-
-
-	uni2tair = dict()
-	with open('../data/celegans/sequences/sequences.tab') as f:
-		for line in f:
-			fields= line[:-2].split('\t')
-			#assert fields[2] == 'reviewed'
-
-			uni = fields[0]
-			for p in proteins:
-				for gg in fields[1:]:
-					if p == gg:
-						if uni in uni2tair:
-							uni2tair[uni].add(p)
-						else:
-							uni2tair[uni] = {p}
-					elif p2g[p] == gg:
-						if uni in uni2tair:
-							uni2tair[uni].add(p2g[p])
-						else:
-							uni2tair[uni] = {p2g[p]}
-
-	tair2uni = dict()
-	for u in uni2tair:
-		for tt in uni2tair[u]:
-			if tt in tair2uni and tair2uni[tt] != u:
-				print(tt, u)
-			else:
-				tair2uni[tt] = u
-
-
-
-	tobedelUni = set()
-	tobedelTair = set()
-
-	for k in tair2uni:
-		if len(tair2uni[k]) > 1:
-			tobedelTair.add(k)
-			for uu in tair2uni[k]:
-				tobedelUni.add(uu)
-
-	for i in tobedelTair:
-		del tair2uni[i]
-
-	for i in tobedelUni:
-		del uni2tair[i]
-
-	tobedelUni = set()
-	tobedelTair = set()
-
-	for k in uni2tair:
-		if len(uni2tair[k]) > 1:
-			tobedelUni.add(k)
-			for uu in uni2tair[k]:
-				tobedelTair.add(uu)
-
-	for i in tobedelTair:
-		del tair2uni[i]
-
-	for i in tobedelUni:
-		del uni2tair[i]
-
-	for k in tair2uni:
-		assert len(tair2uni[k]) == 1
-		assert tair2uni[k][0] in uni2tair
-
-	for k in uni2tair:
-		assert len(uni2tair[k]) == 1
-		assert uni2tair[k][0] in tair2uni
-
-
-	for k in tair2uni:
-		tair2uni[k] = tair2uni[k][0]
-
-
-	for k in uni2tair:
-		uni2tair[k] = uni2tair[k][0]
-
-	partners = dict()
-	with open(path + 'ppi-clean', 'w') as fw:
-		with open(path + 'ppi-biogrid-physical.txt') as fr:
-			for i, line in enumerate(fr):
-
-				fields = line.split('\t')
-				p1 = fields[0]
-				p2 = fields[1]
-
-
-
-				if p1 == p2:
-					#homodimer etc.
-					continue
-
-
-				if p1 not in tair2uni or p2 not in tair2uni:
-					continue
-
-				p1 = tair2uni[p1]
-				p2 = tair2uni[p2]
-
-
-				if p1 not in annotatedGenes or p2 not in annotatedGenes:
-					continue
-
-				if p1 in partners and p2 in partners[p1]:
-					#duplicate line
-					#print('duplicate line')
-					continue
-
-				if p2 in partners and p1 in partners[p2]:
-					#print('reverse')
-					#we've seen the reverse order pair
-					continue
-
-				if p1 not in partners:
-					partners[p1] = set([p2])
-				else:
-					partners[p1].add(p2)
-
-
-				fw.write(p1 + '\t' + p2 + '\n')
-
-
-
-
-def makeNetworkYeast(annotationPrefix):
+def makeNetworkYeast(annotationPrefix, excludeUnannotated=True):
 	path = '../data/yeast/interactions/'
 
 	tair2uni = dict()
@@ -229,7 +97,14 @@ def makeNetworkYeast(annotationPrefix):
 		uni2tair[k] = uni2tair[k][0]
 
 	partners = dict()
-	with open(path + 'ppi-clean', 'w') as fw:
+
+	if excludeUnannotated:
+		outFileName = path + 'ppi-clean'
+	else:
+		outFileName = path + 'ppi-clean+unannotated'
+
+
+	with open(outFileName, 'w') as fw:
 		with open(path + 'ppi-biogrid-physical.txt') as fr:
 			for i, line in enumerate(fr):
 
@@ -249,7 +124,7 @@ def makeNetworkYeast(annotationPrefix):
 				p1 = tair2uni[p1]
 				p2 = tair2uni[p2]
 
-				if p1 not in annotatedGenes or p2 not in annotatedGenes:
+				if (p1 not in annotatedGenes or p2 not in annotatedGenes) and excludeUnannotated:
 					continue
 
 				if p1 in partners and p2 in partners[p1]:
@@ -272,7 +147,7 @@ def makeNetworkYeast(annotationPrefix):
 
 
 
-def makeNetworkArabidopsis(annotationPrefix):
+def makeNetworkArabidopsis(annotationPrefix, excludeUnannotated=True):
 	path = '../data/arabidopsis/interactions/'
 
 	with open('../data/arabidopsis/annotations/' + annotationPrefix + 'geneNames.pkl', 'rb') as f:
@@ -360,8 +235,13 @@ def makeNetworkArabidopsis(annotationPrefix):
 		for k in uni2tair:
 			uni2tair[k] = uni2tair[k][0]
 
+		if excludeUnannotated:
+			outFileName = path + 'ppi-clean'
+		else:
+			outFileName = path + 'ppi-clean+unannotated'
+
 		partners = dict()
-		with open(path + 'ppi-clean', 'w') as fw:
+		with open(outFileName, 'w') as fw:
 			with open(path + 'ppi-biogrid-physical.txt') as fr:
 				for i, line in enumerate(fr):
 
@@ -382,7 +262,7 @@ def makeNetworkArabidopsis(annotationPrefix):
 					p1 = tair2uni[p1]
 					p2 = tair2uni[p2]
 
-					if p1 not in annotatedGenes or p2 not in annotatedGenes:
+					if (p1 not in annotatedGenes or p2 not in annotatedGenes) and excludeUnannotated:
 						continue
 
 					if p1 in partners and p2 in partners[p1]:
@@ -404,7 +284,7 @@ def makeNetworkArabidopsis(annotationPrefix):
 					fw.write(p1 + '\t' + p2 + '\n')
 
 
-def makeNetworkTomato(annotationPrefix):
+def makeNetworkTomato(annotationPrefix, excludeUnannotated=True):
 
 	with open('../data/tomato/annotations/' + annotationPrefix + 'geneNames.pkl', 'rb') as f:
 		geneNames = pickle.load(f)
@@ -457,7 +337,12 @@ def makeNetworkTomato(annotationPrefix):
 	partners = dict()
 
 
-	with open(path + 'ppi-clean', 'w') as fw:
+	if excludeUnannotated:
+		outFileName = path + 'ppi-clean'
+	else:
+		outFileName = path + 'ppi-clean+unannotated'
+
+	with open(outFileName, 'w') as fw:
 		with open(path + 'ppi-biogrid-physical.txt') as fr:
 			for i, line in enumerate(fr):
 
@@ -490,7 +375,7 @@ def makeNetworkTomato(annotationPrefix):
 					p2 = p2.split('.')[0]
 
 
-				if p1 not in annotatedGenes or p2 not in annotatedGenes:
+				if (p1 not in annotatedGenes or p2 not in annotatedGenes) and excludeUnannotated:
 					continue
 
 				if p1 in partners and p2 in partners[p1]:
@@ -512,7 +397,7 @@ def makeNetworkTomato(annotationPrefix):
 
 
 
-def makeNetworkEcoli(annotationPrefix):
+def makeNetworkEcoli(annotationPrefix, excludeUnannotated=True):
 	path = '../data/ecoli/interactions/'
 
 	tair2uni = dict()
@@ -581,8 +466,13 @@ def makeNetworkEcoli(annotationPrefix):
 		tair2uni[tair] = uni
 
 
+	if excludeUnannotated:
+		outFileName = path + 'ppi-clean'
+	else:
+		outFileName = path + 'ppi-clean+unannotated'
+
 	partners = dict()
-	with open(path + 'ppi-clean', 'w') as fw:
+	with open(outFileName, 'w') as fw:
 		with open(path + 'ppi-biogrid-physical.txt') as fr:
 			for i, line in enumerate(fr):
 
@@ -602,7 +492,7 @@ def makeNetworkEcoli(annotationPrefix):
 				p1 = tair2uni[p1]
 				p2 = tair2uni[p2]
 
-				if p1 not in annotatedGenes or p2 not in annotatedGenes:
+				if (p1 not in annotatedGenes or p2 not in annotatedGenes) and excludeUnannotated:
 					continue
 
 				if p1 in partners and p2 in partners[p1]:
@@ -632,13 +522,17 @@ try:
 except IndexError:
 	annotationPrefix = 'P_'
 
+try:
+	excludeUnannotated = bool(int(sys.argv[3]))
+except IndexError:
+	excludeUnannotated = True
+
 if species == 'yeast':
-	makeNetworkYeast(annotationPrefix)
+	makeNetworkYeast(annotationPrefix, excludeUnannotated)
 elif species == 'arabidopsis':
-	makeNetworkArabidopsis(annotationPrefix)
+	makeNetworkArabidopsis(annotationPrefix, excludeUnannotated)
 elif species == 'tomato':
-	makeNetworkTomato(annotationPrefix)
-elif species == 'celegans':
-	makeNetworkWorm(annotationPrefix)
+	makeNetworkTomato(annotationPrefix, excludeUnannotated)
 elif species == 'ecoli':
-	makeNetworkEcoli(annotationPrefix)
+	makeNetworkEcoli(annotationPrefix, excludeUnannotated)
+

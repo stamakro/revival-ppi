@@ -65,17 +65,16 @@ walkLength = int(sys.argv[6])
 
 
 try:
-    isitString = int(sys.argv[7])
+    extraPath = sys.argv[7]
 except IndexError:
-    isitString = False
+    isitString = '/'
+
+assert extraPath == '/' or extraPath == '/string/' or extraPath == '/withUnannotated/'
 
 
 
-if isitString:
-    outfile = '../experiments/n2v/' + species + '/string/' + str(currentFold) + '_' + str(nwalks) + '_' + str(p) + '_' + str(q) + '_' + str(walkLength) + '.txt'
-else:
-    outfile = '../experiments/n2v/' + species + '/' + str(currentFold) + '_' + str(nwalks) + '_' + str(p) + '_' + str(q) + '_' + str(walkLength) + '.txt'
 
+outfile = '../experiments/n2v/' + species + extraPath + str(currentFold) + '_' + str(nwalks) + '_' + str(p) + '_' + str(q) + '_' + str(walkLength) + '.txt'
 
 dims = [32, 64, 96, 128, 150, 200, 500]
 ks = [1, 2, 5, 7, 9, 11, 15, 21, 31, 51]
@@ -104,10 +103,7 @@ with open(outfile, 'w') as fw:
 
 
         for idim, dim in enumerate(dims):
-            if isitString:
-                fileName = 'node2vec/emb/string/' + species + '_' + str(nwalks) + '_' + str(p) + '_' + str(q) + '_' + str(walkLength) + '_' + str(dim) + '.emb'
-            else:
-                fileName = 'node2vec/emb/' + species + '_' + str(nwalks) + '_' + str(p) + '_' + str(q) + '_' + str(walkLength) + '_' + str(dim) + '.emb'
+            fileName = 'node2vec/emb' + extraPath + species + '_' + str(nwalks) + '_' + str(p) + '_' + str(q) + '_' + str(walkLength) + '_' + str(dim) + '.emb'
 
             with open(fileName) as f:
                 for i, line in enumerate(f):
@@ -118,7 +114,10 @@ with open(outfile, 'w') as fw:
                     else:
                         fields = line.split()
                         assert len(fields) == n2vDim + 1
-                        X[int(fields[0])] = np.array(fields[1:]).astype(float)
+                        try:
+                            X[int(fields[0])] = np.array(fields[1:]).astype(float)
+                        except IndexError:
+                            pass
 
 
             Xtrain = X[train_in]

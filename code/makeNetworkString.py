@@ -2,7 +2,7 @@ import pickle
 import sys
 import numpy as np
 
-def makeNetworkYeast(annotationPrefix):
+def makeNetworkYeast(annotationPrefix, excludeUnannotated=True):
 	path = '../data/' + species + '/interactions/'
 
 
@@ -112,7 +112,10 @@ def makeNetworkYeast(annotationPrefix):
 
 	            files = []
 	            for ff in fileNames:
-	                filepointer = open(path + 'features/' + str(ff), 'w')
+	                if excludeUnannotated:
+	                    filepointer = open(path + 'features/' + str(ff), 'w')
+	                else:
+	                    filepointer = open(path + 'features/' + str(ff) + '+unannotated', 'w')
 	                files.append(filepointer)
 
 
@@ -132,7 +135,7 @@ def makeNetworkYeast(annotationPrefix):
 	            p1 = tair2uni[p1]
 	            p2 = tair2uni[p2]
 
-	            if p1 not in annotatedGenes or p2 not in annotatedGenes:
+	            if (p1 not in annotatedGenes or p2 not in annotatedGenes) and excludeUnannotated:
 	                continue
 
 	            assert p1 != p2
@@ -149,7 +152,7 @@ def makeNetworkYeast(annotationPrefix):
 	        ff.close()
 
 
-def makeNetworkArabidopsis(annotationPrefix):
+def makeNetworkArabidopsis(annotationPrefix, excludeUnannotated=True):
 	path = '../data/arabidopsis/interactions/'
 
 	with open('../data/arabidopsis/annotations/' + annotationPrefix +'geneNames.pkl', 'rb') as f:
@@ -260,7 +263,11 @@ def makeNetworkArabidopsis(annotationPrefix):
 
 	            files = []
 	            for ff in fileNames:
-	                filepointer = open(path + 'features/' + str(ff), 'w')
+	                if excludeUnannotated:
+	                    filepointer = open(path + 'features/' + str(ff), 'w')
+	                else:
+	                    filepointer = open(path + 'features/' + str(ff) + '+unannotated', 'w')
+	                    
 	                files.append(filepointer)
 
 
@@ -281,7 +288,7 @@ def makeNetworkArabidopsis(annotationPrefix):
 	            p1 = tair2uni[p1]
 	            p2 = tair2uni[p2]
 
-	            if p1 not in annotatedGenes or p2 not in annotatedGenes:
+	            if (p1 not in annotatedGenes or p2 not in annotatedGenes) and excludeUnannotated:
 	                continue
 
 
@@ -300,7 +307,7 @@ def makeNetworkArabidopsis(annotationPrefix):
 
 
 
-def makeNetworkTomato(annotationPrefix):
+def makeNetworkTomato(annotationPrefix, excludeUnannotated=True):
 	path = '../data/' + species + '/interactions/'
 
 	with open('../data/tomato/annotations/' + annotationPrefix +'geneNames.pkl', 'rb') as f:
@@ -319,7 +326,11 @@ def makeNetworkTomato(annotationPrefix):
 
 	            files = []
 	            for ff in fileNames:
-	                filepointer = open(path + 'features/' + str(ff), 'w')
+	                if excludeUnannotated:
+	                    filepointer = open(path + 'features/' + str(ff), 'w')
+	                else:
+	                    filepointer = open(path + 'features/' + str(ff) + '+unannotated', 'w')
+
 	                files.append(filepointer)
 
 
@@ -332,7 +343,7 @@ def makeNetworkTomato(annotationPrefix):
 	                #homodimer etc.
 	                continue
 
-	            if p1 not in annotatedGenes or p2 not in annotatedGenes:
+	            if (p1 not in annotatedGenes or p2 not in annotatedGenes) and excludeUnannotated:
 	                continue
 
 
@@ -349,7 +360,7 @@ def makeNetworkTomato(annotationPrefix):
 
 
 
-def makeNetworkEcoli(annotationPrefix):
+def makeNetworkEcoli(annotationPrefix, excludeUnannotated=True):
 	path = '../data/' + species + '/interactions/'
 
 
@@ -387,7 +398,11 @@ def makeNetworkEcoli(annotationPrefix):
 
 	            files = []
 	            for ff in fileNames:
-	                filepointer = open(path + 'features/' + str(ff), 'w')
+	                if excludeUnannotated:
+	                    filepointer = open(path + 'features/' + str(ff), 'w')
+	                else:
+	                    filepointer = open(path + 'features/' + str(ff) + '+unannotated', 'w')
+
 	                files.append(filepointer)
 
 
@@ -408,7 +423,7 @@ def makeNetworkEcoli(annotationPrefix):
 	            p2 = tair2uni[p2]
 
 
-	            if p1 not in annotatedGenes or p2 not in annotatedGenes:
+	            if (p1 not in annotatedGenes or p2 not in annotatedGenes) and excludeUnannotated:
 	                continue
 
 
@@ -437,12 +452,16 @@ try:
 except IndexError:
 	annotationPrefix = 'P_'
 
+try:
+	excludeUnannotated = bool(int(sys.argv[3]))
+except IndexError:
+	excludeUnannotated = True
 
 if species == 'yeast':
-	makeNetworkYeast(annotationPrefix)
+	makeNetworkYeast(annotationPrefix, excludeUnannotated)
 elif species == 'arabidopsis':
-	makeNetworkArabidopsis(annotationPrefix)
+	makeNetworkArabidopsis(annotationPrefix, excludeUnannotated)
 elif species == 'tomato':
-	makeNetworkTomato(annotationPrefix)
+	makeNetworkTomato(annotationPrefix, excludeUnannotated)
 elif species == 'ecoli':
-	makeNetworkEcoli(annotationPrefix)
+	makeNetworkEcoli(annotationPrefix, excludeUnannotated)
